@@ -6,6 +6,7 @@ from audio_video_downloader import download_video
 
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24)
 
 
 # Background task to clean up old files
