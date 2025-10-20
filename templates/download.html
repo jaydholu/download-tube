@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Download - DownloadTube{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1 class="card-title">YouTube Downloader</h1>
+    <p class="card-subtitle">Paste a link and choose your desired format.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form action="/download" method="POST">
+        <div class="form-group">
+            <label for="url">YouTube URL</label>
+            <input type="text" id="url" name="url" class="input-field" placeholder="https://www.youtube.com/watch?v=..." required>
+        </div>
+        
+        <div class="form-group">
+            <label>Select Format</label>
+            <div class="format-options">
+                <div class="radio-option">
+                    <input type="radio" id="mp4" name="format" value="mp4" checked>
+                    <label for="mp4">
+                        <!-- <span class="icon">🎥</span> -->
+                        MP4 (Video)
+                    </label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" id="mp3" name="format" value="mp3">
+                    <label for="mp3">
+                        <!-- <span class="icon">🎵</span> -->
+                        MP3 (Audio)
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <button type="submit" class="btn">Start download</button>
+    </form>
+</div>
+{% endblock %}

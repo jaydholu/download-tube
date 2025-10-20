@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Download Ready - DownloadTube{% endblock %}
+
+{% block content %}
+<div class="card success-card">
+    <div class="success-icon">✓</div>
+    <h1 class="card-title">Your file is ready!</h1>
+    <p class="card-subtitle">The download has been completed successfully.</p>
+    
+    <div class="filename">
+        <strong>File:</strong> {{ filename }}
+    </div>
+    
+    <div class="success-actions">
+        <a href="{{ url_for('serve_file', filename=filename) }}" class="btn">Download {{ video_title }}</a>
+        <a href="/download" class="btn btn-secondary">Download Another Video</a>
+    </div>
+</div>
+{% endblock %}

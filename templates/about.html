@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/about_developer.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="card card-large">
+    <h1 class="card-title">About This Project</h1>
+
+    <section class="web-app-description" style="text-align: left; margin-top: 2rem;">
+        <p>
+            <strong class="web-app-name">DownloadTube</strong> is a web app that allows users to download videos from YouTube easily. Whether you're looking to save a tutorial, music video, or any other content, this platform simplifies the process.
+        </p>
+        <br />
+
+        <h3>How It Works</h3>
+        <ol>
+            <li>Paste a video URL.</li>
+            <li>Select the desired format (MP4 for video or MP3 for audio).</li>
+            <li>Click the "Start download" button.</li>
+            <li>Your file will be processed and ready for download shortly.</li>
+        </ol>
+        <br />
+
+        <h3>Building Technologies</h3>
+        <p>This project is built using:</p>
+        <ul>
+            <li><strong>Backend:</strong> Flask, yt-dlp, APScheduler</li>
+            <li><strong>Frontend:</strong> HTML5, CSS, Jinja2</li>
+        </ul>
+        <br />
+    </section>
+
+    <hr class="my-4" style="border-color: var(--border-color); margin: 2rem 0;">
+
+    <section class="org-description" style="text-align: left;">
+        <h2 style="text-align: center; font-weight: 700; color: var(--text-primary);">Code And Cosmos</h2>
+        <p style="text-align: center; margin-bottom: 1.5rem;">
+            This web app is developed by <strong>Code And Cosmos</strong> as a service-based product.
+        </p>
+        <p>
+            Code And Cosmos is a service-based organization dedicated to exploring the intersection of technology and creativity. We believe in the power of code to shape our world and are committed to building tools that empower individuals and communities.
+        </p>
+        <br/>
+
+        <h3>What We Build</h3>
+        <p>
+            We are architects of the digital universe. As a service-based product studio, we partner with businesses to design, develop, and deploy high-performance applications that solve real-world challenges and drive growth.
+        </p>
+        <p>Our expertise spans the full spectrum of modern application development:</p>
+        <ul>
+            <li><strong>Bespoke Web Applications:</strong> From dynamic websites to complex enterprise platforms, we
+                build scalable and secure web solutions tailored to your unique business needs.</li>
+            <li><strong>Engaging Mobile Apps:</strong> We create intuitive and powerful mobile applications for both iOS
+                and Android, connecting you directly with your users wherever they are.</li>
+            <li><strong>Intelligent ML Solutions:</strong> We leverage the power of data with custom machine learning
+                models and AI-driven features designed to unlock insights and automate processes.</li>
+        </ul>
+        <br/>
+
+        <h3>Our Approach</h3>
+        <p>
+            We believe that the best products are born from collaboration. We work closely with our clients as a
+            dedicated technology partner, ensuring transparency, agility, and a relentless focus on quality from the
+            first line of code to the final launch.
+        </p>
+
+        <p>
+            Ready to bring your vision to life? Let's explore the possibilities together.
+            <br>
+            <strong>Visit our official website to learn more: </strong><a href="https://codeandcosmos.onrender.com" target="_blank" style="color: var(--primary-blue);">codeandcosmos</a>
+        </p>
+    </section>
+</div>
+{% endblock %}
