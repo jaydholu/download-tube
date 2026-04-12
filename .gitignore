@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+download-tube/
+venv/
+.env
+
+# Node
+node_modules/
+frontend/dist/
+
+# Backend static (built frontend)
+backend/static/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Temp
+*.tmp
+*.log
+
+# FFMPEG
+ffmpeg-*.zip
+ffms/

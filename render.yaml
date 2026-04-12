@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: downloadtube
+    runtime: python
+    plan: free
+    buildCommand: bash build.sh
+    startCommand: >-
+      cd $HOME/bgutil-ytdlp-pot-provider/server &&
+      node build/main.js &
+      sleep 3 &&
+      cd /opt/render/project/src/backend &&
+      uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.10"
+      - key: NODE_VERSION
+        value: "20.18.0"
