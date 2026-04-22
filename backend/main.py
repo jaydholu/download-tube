@@ -8,14 +8,13 @@ import tempfile
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Optional
 
-# Fix for Windows: asyncio.create_subprocess_exec needs ProactorEventLoop
+
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, field_validator
@@ -38,13 +37,10 @@ DOWNLOAD_DIR.mkdir(exist_ok=True)
 
 VIDEO_QUALITIES = ["1080", "720", "480", "360", "240", "144"]
 AUDIO_QUALITIES = ["320", "256", "192", "128", "64", "32"]
-
-# Common yt-dlp flags for server-side usage
-# tv client doesn't require PO tokens; mweb with bgutil as fallback
-# The bgutil PO Token provider plugin generates tokens automatically for mweb
 YTDLP_COMMON_FLAGS = [
-    "--extractor-args", "youtube:player_client=tv,mweb",
+    "--extractor-args", "youtube:player_client=tv,ios,android",
     "--no-check-certificates",
+    "--no-warnings",
 ]
 
 active_downloads: dict = {}
@@ -54,7 +50,7 @@ active_downloads: dict = {}
 class DownloadRequest(BaseModel):
     url: str
     format: str = "mp4"
-    quality: Optional[str] = None
+    quality: str | None = None
 
     @field_validator("url")
     @classmethod
@@ -105,8 +101,8 @@ async def run_command(cmd: list[str]) -> tuple[bytes, bytes, int]:
         )
         stdout, stderr = await proc.communicate()
         return stdout, stderr, proc.returncode
+    
     except NotImplementedError:
-        # Fallback for Windows when ProactorEventLoop isn't active
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(
             None,
@@ -118,22 +114,29 @@ async def run_command(cmd: list[str]) -> tuple[bytes, bytes, int]:
 async def get_video_info(url: str) -> dict:
     cmd = ["yt-dlp", *YTDLP_COMMON_FLAGS, "-v", "--dump-json", "--no-download", "--no-playlist", url]
     stdout, stderr, returncode = await run_command(cmd)
+
     if returncode != 0:
-        # Combine stdout and stderr for full error context
         full_output = (stdout.decode(errors="ignore") + "\n" + stderr.decode(errors="ignore")).strip()
-        # Extract the most relevant error lines
         err_lines = [l for l in full_output.split("\n") if "ERROR" in l or "pot" in l.lower() or "PO Token" in l]
         err_msg = "\n".join(err_lines[-5:]) if err_lines else full_output[-400:]
+
+        if "DRM" in full_output or "DRM protected" in full_output:
+            raise HTTPException(
+                status_code=400,
+                detail="This video is DRM protected and cannot be downloaded."
+            )
+
         raise HTTPException(
             status_code=400,
             detail=f"yt-dlp error: {err_msg}" if err_msg else "Could not fetch video info.",
         )
-    # stdout may contain both debug lines and JSON - extract just the JSON
+    
     raw = stdout.decode(errors="ignore")
-    # Find the JSON object (starts with '{')
     json_start = raw.find('{')
+
     if json_start == -1:
         raise HTTPException(status_code=500, detail="No JSON in yt-dlp output")
+    
     return json.loads(raw[json_start:])
 
 
@@ -159,16 +162,18 @@ async def _stream_download(cmd: list[str], task_id: str, quality: str, format_ty
                 if not chunk:
                     break
                 buffer += chunk
+
                 while b"\r" in buffer or b"\n" in buffer:
-                    # Split on either \r or \n (yt-dlp uses \r for progress)
                     idx_r = buffer.find(b"\r")
                     idx_n = buffer.find(b"\n")
+
                     if idx_r == -1:
                         idx = idx_n
                     elif idx_n == -1:
                         idx = idx_r
                     else:
                         idx = min(idx_r, idx_n)
+
                     line = buffer[:idx].decode(errors="ignore").strip()
                     buffer = buffer[idx + 1:]
                     if line:
@@ -196,10 +201,10 @@ async def _stream_download(cmd: list[str], task_id: str, quality: str, format_ty
             read_stream(proc.stderr),
         )
         await proc.wait()
+
         return proc.returncode
 
     except NotImplementedError:
-        # Windows fallback: run in thread, parse output
         loop = asyncio.get_event_loop()
 
         def _run_with_progress():
@@ -207,8 +212,10 @@ async def _stream_download(cmd: list[str], task_id: str, quality: str, format_ty
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                 bufsize=0,
             )
+
             for raw_line in iter(lambda: p.stdout.readline(), b""):
                 line = raw_line.decode(errors="ignore").strip()
+
                 if line:
                     match = progress_pattern.search(line)
                     if match:
@@ -229,12 +236,13 @@ async def _stream_download(cmd: list[str], task_id: str, quality: str, format_ty
                             "eta": "processing...",
                         })
             p.wait()
+
             return p.returncode
 
         return await loop.run_in_executor(None, _run_with_progress)
 
 
-async def download_media(url: str, format_type: str, quality: Optional[str], task_id: str) -> dict:
+async def download_media(url: str, format_type: str, quality: str | None, task_id: str) -> dict:
     task_dir = DOWNLOAD_DIR / task_id
     task_dir.mkdir(exist_ok=True)
 
@@ -373,7 +381,6 @@ async def get_file(task_id: str):
     filename = task.get("filename", "download")
     media_type = "video/mp4" if task["format"] == "mp4" else "audio/mpeg"
 
-    # Mark download time — file will be cleaned up by periodic task after 5 min
     import time
     task["served_at"] = time.time()
 
@@ -409,6 +416,7 @@ async def get_transcript(req: VideoInfo):
     lines = content.split("\n")
     transcript_lines = []
     seen = set()
+
     for line in lines:
         line = line.strip()
         if not line or line.startswith("WEBVTT") or line.startswith("Kind:") or line.startswith("Language:"):
@@ -427,7 +435,6 @@ async def get_transcript(req: VideoInfo):
 # --- Serve frontend static files ---
 STATIC_DIR = Path(__file__).parent / "static"
 if STATIC_DIR.exists():
-    # Mount assets directory
     assets_dir = STATIC_DIR / "assets"
     if assets_dir.exists():
         app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
@@ -442,7 +449,6 @@ if STATIC_DIR.exists():
 
 @app.on_event("startup")
 async def startup_cleanup():
-    # Clean leftover files from previous runs
     if DOWNLOAD_DIR.exists():
         for item in DOWNLOAD_DIR.iterdir():
             if item.is_dir():
@@ -459,10 +465,12 @@ async def _periodic_cleanup():
         await asyncio.sleep(60)
         now = time.time()
         expired = []
+
         for task_id, task in active_downloads.items():
             served_at = task.get("served_at")
             if served_at and (now - served_at) > 300:  # 5 minutes
                 expired.append(task_id)
+
         for task_id in expired:
             cleanup_task_files(task_id)
             active_downloads.pop(task_id, None)

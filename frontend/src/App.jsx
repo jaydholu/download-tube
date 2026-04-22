@@ -101,7 +101,7 @@ function QualitySelector({ format, quality, setQuality, availableQualities }) {
         onClick={() => setOpen(!open)}
         className="btn-secondary flex items-center gap-2 text-sm w-full justify-between"
       >
-        <span>Quality: {label}</span>
+        <span>{label}</span>
         <ChevronDown size={14} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
