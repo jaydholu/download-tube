@@ -1,14 +1,10 @@
 import os
-import sys
-import asyncio
-import shutil
 import time
 import uuid
+import shutil
+import asyncio
 from pathlib import Path
-
-# Windows asyncio fix
-if sys.platform == "win32":
-    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
@@ -21,7 +17,44 @@ from downloader import active_downloads, get_video_info, download_media, fetch_t
 from utils import cleanup_task_files
 
 
-app = FastAPI(title="DownloadTube API", version="1.0.0")
+# ---------------------------------------------------------------------------
+# Startup / cleanup
+# ---------------------------------------------------------------------------
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: wipe any leftover task directories from a previous run
+    if DOWNLOAD_DIR.exists():
+        for item in DOWNLOAD_DIR.iterdir():
+            if item.is_dir():
+                shutil.rmtree(item, ignore_errors=True)
+    cleanup_task = asyncio.create_task(_periodic_cleanup())
+
+    yield
+
+    # Shutdown: stop the background cleanup loop cleanly
+    cleanup_task.cancel()
+    try:
+        await cleanup_task
+    except asyncio.CancelledError:
+        pass
+
+
+async def _periodic_cleanup():
+    """Every 60s, delete files served more than 5 minutes ago."""
+    while True:
+        await asyncio.sleep(60)
+        now = time.time()
+        expired = [
+            tid for tid, task in active_downloads.items()
+            if task.get("served_at") and (now - task["served_at"]) > 300
+        ]
+        for tid in expired:
+            cleanup_task_files(tid)
+            active_downloads.pop(tid, None)
+
+
+app = FastAPI(title="DownloadTube API", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -108,7 +141,6 @@ async def get_file(task_id: str):
         filepath,
         filename=filename,
         media_type=media_type,
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 
@@ -134,30 +166,3 @@ if STATIC_DIR.exists():
         if file_path.is_file():
             return FileResponse(str(file_path))
         return FileResponse(str(STATIC_DIR / "index.html"))
-
-
-# ---------------------------------------------------------------------------
-# Startup / cleanup
-# ---------------------------------------------------------------------------
-
-@app.on_event("startup")
-async def startup_cleanup():
-    if DOWNLOAD_DIR.exists():
-        for item in DOWNLOAD_DIR.iterdir():
-            if item.is_dir():
-                shutil.rmtree(item, ignore_errors=True)
-    asyncio.create_task(_periodic_cleanup())
-
-
-async def _periodic_cleanup():
-    """Every 60 s, delete files served more than 5 minutes ago."""
-    while True:
-        await asyncio.sleep(60)
-        now = time.time()
-        expired = [
-            tid for tid, task in active_downloads.items()
-            if task.get("served_at") and (now - task["served_at"]) > 300
-        ]
-        for tid in expired:
-            cleanup_task_files(tid)
-            active_downloads.pop(tid, None)

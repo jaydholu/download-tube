@@ -1,5 +1,5 @@
-import re
 from pydantic import BaseModel, field_validator
+from utils import detect_platform
 
 
 class DownloadRequest(BaseModel):
@@ -10,9 +10,8 @@ class DownloadRequest(BaseModel):
     @field_validator("url")
     @classmethod
     def validate_url(cls, v):
-        yt_pattern = r"(https?://)?(www\.)?(youtube\.com|youtu\.be)/.+"
-        if not re.match(yt_pattern, v):
-            raise ValueError("Invalid YouTube URL")
+        if not detect_platform(v):
+            raise ValueError("Invalid YouTube or Instagram URL")
         return v
 
     @field_validator("format")
@@ -29,7 +28,6 @@ class VideoInfoRequest(BaseModel):
     @field_validator("url")
     @classmethod
     def validate_url(cls, v):
-        yt_pattern = r"(https?://)?(www\.)?(youtube\.com|youtu\.be)/.+"
-        if not re.match(yt_pattern, v):
-            raise ValueError("Invalid YouTube URL")
+        if not detect_platform(v):
+            raise ValueError("Invalid YouTube or Instagram URL")
         return v

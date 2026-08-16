@@ -5,8 +5,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        display: ['"Outfit"', 'sans-serif'],
-        body: ['"Source Sans 3"', 'sans-serif'],
+        display: ['"Outfit"', 'Poppins', 'sans-serif'],
+        body: ['"Source Sans 3"', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'monospace'],
       },
       colors: {

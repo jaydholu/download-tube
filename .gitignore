@@ -4,7 +4,10 @@ __pycache__/
 *.egg-info/
 download-tube/
 venv/
+.venv/
 .env
+
+backend/instagram_cookies.txt
 
 # Node
 node_modules/

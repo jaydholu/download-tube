@@ -15,15 +15,17 @@ from config import (
     MAX_FILE_SIZE_MB,
     MAX_FILE_SIZE_BYTES,
 )
-from utils import sanitize_filename, run_command
+from utils import sanitize_filename, run_command, detect_platform, get_cookie_flags
 
 
 active_downloads: dict = {}
 
 
 async def get_video_info(url: str) -> dict:
+    platform = detect_platform(url)
+    cookie_flags = get_cookie_flags(platform)
     cmd = [
-        "yt-dlp", *YTDLP_COMMON_FLAGS,
+        "yt-dlp", *YTDLP_COMMON_FLAGS, *cookie_flags,
         "-v", "--dump-json", "--no-download", "--no-playlist",
         url,
     ]
@@ -38,6 +40,14 @@ async def get_video_info(url: str) -> dict:
             raise HTTPException(
                 status_code=400,
                 detail="This video is DRM protected and cannot be downloaded.",
+            )
+
+        if platform == "instagram" and (
+            "login" in full_output.lower() or "rate-limit" in full_output.lower()
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="Instagram session expired or rate-limited — cookies need refreshing.",
             )
 
         err_lines = [
@@ -115,11 +125,16 @@ async def _stream_download(cmd: list[str], task_id: str) -> int:
         await asyncio.gather(read_stream(proc.stdout), read_stream(proc.stderr))
         await proc.wait()
 
+        # By this point the process has exited, so returncode is always set —
+        # this assertion just makes that guarantee explicit for the type
+        # checker (Popen/Process type returncode as int | None since it CAN
+        # be unset before wait()/communicate() completes).
+        assert proc.returncode is not None
         return proc.returncode
 
     except NotImplementedError:
         # Windows fallback
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
 
         def _run_with_progress():
             p = subprocess.Popen(
@@ -128,8 +143,10 @@ async def _stream_download(cmd: list[str], task_id: str) -> int:
                 stderr=subprocess.STDOUT,
                 bufsize=0,
             )
+            assert p.stdout is not None  # guaranteed by stdout=PIPE above
+            stdout = p.stdout  # local var narrows more reliably than p.stdout inside the lambda below
 
-            for raw_line in iter(lambda: p.stdout.readline(), b""):
+            for raw_line in iter(lambda: stdout.readline(), b""):
                 line = raw_line.decode(errors="ignore").strip()
                 if line:
                     match = progress_pattern.search(line)
@@ -156,6 +173,9 @@ async def download_media(url: str, format_type: str, quality: str | None, task_i
     task_dir = DOWNLOAD_DIR / task_id
     task_dir.mkdir(exist_ok=True)
 
+    platform = detect_platform(url)
+    cookie_flags = get_cookie_flags(platform)
+
     qualities = VIDEO_QUALITIES if format_type == "mp4" else AUDIO_QUALITIES
 
     if quality and quality != "auto" and quality in qualities:
@@ -173,7 +193,7 @@ async def download_media(url: str, format_type: str, quality: str | None, task_i
         if format_type == "mp4":
             format_spec = f"bestvideo[height<={q}]+bestaudio/best[height<={q}]/best"
             cmd = [
-                "yt-dlp", *YTDLP_COMMON_FLAGS,
+                "yt-dlp", *YTDLP_COMMON_FLAGS, *cookie_flags,
                 "-f", format_spec,
                 "--merge-output-format", "mp4",
                 "--no-playlist", "--no-overwrites", "--newline",
@@ -181,9 +201,15 @@ async def download_media(url: str, format_type: str, quality: str | None, task_i
             ]
         else:
             cmd = [
-                "yt-dlp", *YTDLP_COMMON_FLAGS,
+                "yt-dlp", *YTDLP_COMMON_FLAGS, *cookie_flags,
                 "-x", "--audio-format", "mp3",
                 "--audio-quality", f"{q}K",
+                "--embed-metadata", "--embed-thumbnail",
+                # Real artist/album (only populated for officially licensed
+                # Content-ID music videos) win when present; otherwise fall
+                # back to creator/uploader — never overwrites genuine data.
+                "--parse-metadata", "%(artist,creator,uploader)s:%(meta_artist)s",
+                "--parse-metadata", "%(album,creator,uploader)s:%(meta_album)s",
                 "--no-playlist", "--no-overwrites", "--newline",
                 "-o", output_template, url,
             ]
@@ -247,8 +273,9 @@ async def fetch_transcript(url: str) -> str:
     task_dir = DOWNLOAD_DIR / f"transcript_{uuid.uuid4().hex[:8]}"
     task_dir.mkdir(exist_ok=True)
 
+    cookie_flags = get_cookie_flags(detect_platform(url))
     cmd = [
-        "yt-dlp", *YTDLP_COMMON_FLAGS,
+        "yt-dlp", *YTDLP_COMMON_FLAGS, *cookie_flags,
         "--write-auto-sub", "--sub-lang", "en",
         "--skip-download", "--sub-format", "vtt",
         "-o", str(task_dir / "%(title)s.%(ext)s"),
