@@ -9,11 +9,19 @@ export function LinkInput({ rawInput, setRawInput, links, truncatedCount, onFetc
   const textareaRef = useRef(null);
 
   // Auto-grow: single-row height for the common one-link case, expanding as more lines are pasted/typed, capped with internal scroll.
+  // Skips resizing entirely when empty — otherwise a long wrapped placeholder
+  // can trick some mobile browsers' scrollHeight into stretching the box
+  // tall before the user has typed anything.
   useEffect(() => {
     const el = textareaRef.current;
 
     if (!el)
       return;
+
+    if (!rawInput) {
+      el.style.height = '';
+      return;
+    }
 
     el.style.height = 'auto';
     el.style.height = `${Math.min(el.scrollHeight, MAX_TEXTAREA_HEIGHT)}px`;
