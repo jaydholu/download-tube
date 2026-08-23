@@ -64,10 +64,10 @@ Unlike YouTube, Instagram requires an authenticated session to reliably fetch re
 1. **Use a secondary/throwaway Instagram account, not your main one.** A server hitting Instagram's endpoints looks nothing like a phone, and can trigger checkpoints on the account behind it.
 2. Log into that account in a browser, then export its session using yt-dlp itself:
    ```bash
-   yt-dlp --cookies-from-browser chrome --cookies instagram_cookies.txt https://instagram.com
+   yt-dlp --cookies-from-browser chrome --cookies cookies_instagram.txt https://instagram.com
    ```
-3. **Local development** — drop the file at `backend/instagram_cookies.txt` (already covered by `.gitignore`; never commit it, it grants full account access).
-4. **Render deployment** — upload it as a [Secret File](https://render.com/docs/configure-environment-variables#secret-files) named `instagram_cookies.txt`. It becomes available at `/etc/secrets/instagram_cookies.txt` at runtime, which `config.py` checks first.
+3. **Local development** — drop the file at `backend/cookies_instagram.txt` (already covered by `.gitignore`; never commit it, it grants full account access).
+4. **Render deployment** — upload it as a [Secret File](https://render.com/docs/configure-environment-variables#secret-files) named `cookies_instagram.txt`. It becomes available at `/etc/secrets/cookies_instagram.txt` at runtime, which `config.py` checks first.
 
 If no cookies file is present, Instagram links are still attempted anonymously and may occasionally work, but expect "login required / rate-limit reached" errors.
 
@@ -86,7 +86,8 @@ downloadtube/
 │   ├── config.py                                  # Paths, size limits, quality ladders
 │   ├── utils.py                                   # Platform detection, cookie flags, filename sanitization
 │   ├── requirements.txt                           # Python dependencies
-│   └── instagram_cookies.txt                      # you create this — gitignored, see Instagram Cookies above
+│   ├── cookies_instagram.txt                      # gitignore
+│   └── cookies_youtube.txt                        # gitignore
 ├── frontend/
 │   ├── src/
 │   │   ├── App.jsx                                # Top-level composition — header, hero, single/batch switch
