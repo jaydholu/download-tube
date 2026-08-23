@@ -3,7 +3,11 @@ import asyncio
 import subprocess
 import shutil
 
-from config import DOWNLOAD_DIR, INSTAGRAM_COOKIES_PATH, LOCAL_INSTAGRAM_COOKIES_PATH
+from config import (
+    DOWNLOAD_DIR,
+    INSTAGRAM_COOKIES_PATH, LOCAL_INSTAGRAM_COOKIES_PATH,
+    YOUTUBE_COOKIES_PATH, LOCAL_YOUTUBE_COOKIES_PATH,
+)
 
 
 def detect_platform(url: str) -> str | None:
@@ -15,16 +19,27 @@ def detect_platform(url: str) -> str | None:
     return None
 
 
-def get_cookie_flags(platform: str | None) -> list[str]:
-    """yt-dlp --cookies flag for platforms that need an authenticated session.
+# Which cookie-file pair to check for each platform.
+_COOKIE_PATHS: dict[str, tuple] = {
+    "instagram": (INSTAGRAM_COOKIES_PATH, LOCAL_INSTAGRAM_COOKIES_PATH),
+    "youtube": (YOUTUBE_COOKIES_PATH, LOCAL_YOUTUBE_COOKIES_PATH),
+}
 
-    YouTube needs nothing extra. Instagram needs a logged-in session's
-    cookies to avoid anonymous rate-limiting; if no cookie file is present
-    we just proceed without one (some public reels may still work).
+
+def get_cookie_flags(platform: str | None) -> list[str]:
+    """yt-dlp --cookies flag for whichever platform needs one.
+
+    Both Instagram and YouTube can get rate-limited or bot-blocked from a
+    datacenter IP without an authenticated session. If no cookie file is
+    present for the platform, we just proceed without one — it may still
+    work some of the time (e.g. YouTube from a less-flagged IP).
     """
-    if platform != "instagram":
+    if platform is None:
         return []
-    for path in (INSTAGRAM_COOKIES_PATH, LOCAL_INSTAGRAM_COOKIES_PATH):
+    paths = _COOKIE_PATHS.get(platform)
+    if not paths:
+        return []
+    for path in paths:
         if path.exists():
             return ["--cookies", str(path)]
     return []
