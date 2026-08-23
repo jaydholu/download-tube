@@ -18,7 +18,7 @@ export function BatchPanel({ queue }) {
     <div className="space-y-4">
       <div className="glass-card p-5 space-y-4 animate-slide-up">
         <div className="flex items-center justify-between">
-          <h3 className="font-display font-semibold text-md">Apply to all</h3>
+          <h3 className="font-display font-semibold text-base">Apply to all</h3>
           <span className="text-xs text-surface-400">{items.length} links</span>
         </div>
         <div className="flex flex-col sm:flex-row gap-4">

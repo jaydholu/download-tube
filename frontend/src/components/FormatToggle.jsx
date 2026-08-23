@@ -15,7 +15,7 @@ export function FormatToggle({ format, setFormat }) {
           <Icon size={15} />
           <span>{label}</span>
           <span>|</span>
-          <span className="text-md uppercase">.{id}</span>
+          <span className="text-sm uppercase">.{id}</span>
         </button>
       ))}
     </div>

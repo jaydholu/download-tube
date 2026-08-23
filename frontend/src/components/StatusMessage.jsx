@@ -48,7 +48,7 @@ export function StatusMessage({ status, taskData }) {
             />
           </div>
           {(speed || eta || totalSize) && (
-            <div className="flex items-center gap-3 text-xs text-surface-400 dark:text-surface-500 font-mono">
+            <div className="flex items-center gap-3 flex-wrap text-xs text-surface-400 dark:text-surface-500 font-mono">
               {totalSize && <span>Size: {totalSize}</span>}
               {speed && <span>Speed: {speed}</span>}
               {eta && <span>ETA: {eta}</span>}
