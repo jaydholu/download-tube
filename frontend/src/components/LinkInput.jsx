@@ -48,8 +48,8 @@ export function LinkInput({ rawInput, setRawInput, links, truncatedCount, onFetc
             onChange={e => setRawInput(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={disabled}
-            placeholder="Paste a YouTube Short or Instagram Reel link — or several, one per line..."
-            className="input-field border-0 bg-transparent focus:ring-0 pr-16 resize-none overflow-y-auto disabled:opacity-60"
+            placeholder="Paste link here - or several, one per line... "
+            className="input-field block border-0 bg-transparent focus:ring-0 pr-16 resize-none overflow-y-auto disabled:opacity-60"
           />
 
           <div className="absolute top-1/2 right-0 -translate-y-1/2 flex items-center pr-4 pointer-events-none">
