@@ -54,12 +54,12 @@ export default function App() {
       <main className="relative z-10 flex-1 flex flex-col items-center px-4 pb-12">
         <div className="w-full max-w-3xl space-y-5 mt-8">
           {/* Hero */}
-          <div className="text-center space-y-2 mb-8">
+          <div className="text-center space-y-2 mb-2">
             <h2 className="font-display font-extrabold text-3xl sm:text-4xl tracking-tight">
               Download YouTube Videos & Instagram Reels
             </h2>
             <p className="text-surface-600 dark:text-surface-300 font-body text-base">
-              Paste a link, pick your format, and download. It's that simple.
+              Paste a link of YouTube Shorts or Instagram Reels, pick your format, and download. It's that simple.
             </p>
           </div>
 
