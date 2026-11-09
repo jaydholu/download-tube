@@ -60,22 +60,16 @@ export function SingleDownloadPanel({
               {downloading ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
               {phase === 'downloading' ? 'Downloading...' : phase === 'starting' ? 'Starting...' : 'Download'}
             </button>
-            {isYoutube && (
-              <button
-                onClick={() => transcript.fetchFor(url)}
-                disabled={transcript.loading}
-                className="px-5 py-4 bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-700 dark:text-surface-300 font-display font-medium text-sm rounded-xl border border-surface-200 dark:border-surface-700 transition-all duration-200 flex items-center gap-2"
-                title="Get transcript"
-              >
-                <FileText size={16} />
-                <span className="hidden sm:inline">Transcript</span>
-              </button>
-            )}
+            <button
+              onClick={() => transcript.fetchFor(url)}
+              disabled={transcript.loading}
+              className="px-5 py-4 bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-700 dark:text-surface-300 font-display font-medium text-sm rounded-xl border border-surface-200 dark:border-surface-700 transition-all duration-200 flex items-center gap-2 disabled:opacity-60"
+              title="Get transcript"
+            >
+              <FileText size={16} />
+              <span className="hidden sm:inline">Transcript</span>
+            </button>
           </div>
-
-          <p className="text-xs text-surface-400 dark:text-surface-500 text-center">
-            Max file size: 450 MB · Quality auto-adjusts to fit
-          </p>
         </div>
       )}
 
@@ -93,14 +87,23 @@ export function SingleDownloadPanel({
         </button>
       )}
 
-      {transcript.loading && <StatusMessage status="transcript_loading" taskData={null} />}
+      {transcript.loading && (
+        <StatusMessage
+          status={isYoutube ? 'transcript_loading' : 'transcribing'}
+          taskData={null}
+        />
+      )}
       {transcript.error && (
         <div className="flex items-center gap-3 px-4 py-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50 rounded-xl text-red-600 dark:text-red-400 text-sm animate-fade-in">
           <span>{transcript.error}</span>
         </div>
       )}
       {transcript.transcript && (
-        <TranscriptPanel transcript={transcript.transcript} onClose={transcript.clear} />
+        <TranscriptPanel
+          transcript={transcript.transcript}
+          source={transcript.source}
+          onClose={transcript.clear}
+        />
       )}
     </>
   );

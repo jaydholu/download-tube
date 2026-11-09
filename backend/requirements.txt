@@ -3,6 +3,10 @@ fastapi==0.141.1
 uvicorn[standard]==0.52.3
 pydantic==2.13.4
 
+# Instagram reel transcription (calls Groq's hosted Whisper) + .env loading
+httpx==0.28.1
+python-dotenv==1.2.4
+
 # yt-dlp is intentionally left unpinned — YouTube/Instagram change often,
 # so `pip install --upgrade yt-dlp` (see README) needs to always fetch whatever
 # is newest rather than being held back by a version pinned here.

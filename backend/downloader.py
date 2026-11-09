@@ -12,10 +12,9 @@ from config import (
     VIDEO_QUALITIES,
     AUDIO_QUALITIES,
     YTDLP_COMMON_FLAGS,
-    MAX_FILE_SIZE_MB,
-    MAX_FILE_SIZE_BYTES,
 )
 from utils import sanitize_filename, run_command, detect_platform, get_cookie_flags
+from transcriber import ensure_groq_configured, transcribe_with_groq
 
 
 active_downloads: dict = {}
@@ -235,10 +234,6 @@ async def download_media(url: str, format_type: str, quality: str | None, task_i
         filepath = files[0]
         file_size = filepath.stat().st_size
 
-        if file_size > MAX_FILE_SIZE_BYTES:
-            filepath.unlink()
-            continue
-
         quality_label = f"{q}p" if format_type == "mp4" else f"{q}kbps"
 
         # Ensure correct extension regardless of what yt-dlp named the file
@@ -262,13 +257,60 @@ async def download_media(url: str, format_type: str, quality: str | None, task_i
 
     active_downloads[task_id] = {
         "status": "failed",
-        "error": f"File exceeds {MAX_FILE_SIZE_MB} MB even at lowest quality. Try a shorter video.",
+        "error": (
+            "Download failed. The video may be private or unavailable, "
+            "or yt-dlp may be out of date (pip install --upgrade yt-dlp)."
+        ),
     }
 
     return active_downloads[task_id]
 
 
-async def fetch_transcript(url: str) -> str:
+async def fetch_transcript(url: str) -> dict:
+    """Return {"transcript": str, "source": "captions" | "whisper"}.
+
+    YouTube videos have caption files yt-dlp can fetch directly. Instagram
+    reels don't, so their audio is transcribed with Whisper instead.
+    """
+    if detect_platform(url) == "instagram":
+        return {"transcript": await _transcribe_audio(url), "source": "whisper"}
+
+    return {"transcript": await _fetch_captions(url), "source": "captions"}
+
+
+async def _transcribe_audio(url: str) -> str:
+    """Download just the audio as a small mono mp3 and transcribe it with Groq."""
+    # Fail fast on a missing key instead of downloading audio we can't use.
+    ensure_groq_configured()
+
+    task_dir = DOWNLOAD_DIR / f"transcript_{uuid.uuid4().hex[:8]}"
+    task_dir.mkdir(exist_ok=True)
+
+    try:
+        cmd = [
+            "yt-dlp", *YTDLP_COMMON_FLAGS, *get_cookie_flags(detect_platform(url)),
+            # 16 kHz mono is what Whisper works with internally anyway, so this
+            # keeps uploads tiny (about 0.5 MB per minute) with no accuracy cost.
+            "-x", "--audio-format", "mp3", "--audio-quality", "64K",
+            "--postprocessor-args", "ExtractAudio:-ac 1 -ar 16000",
+            "--no-playlist",
+            "-o", str(task_dir / "audio.%(ext)s"), url,
+        ]
+        await run_command(cmd)
+
+        audio_path = task_dir / "audio.mp3"
+        if not audio_path.exists():
+            raise HTTPException(
+                status_code=400,
+                detail="Could not download this reel's audio. Its Instagram cookies may have expired.",
+            )
+
+        return await transcribe_with_groq(audio_path)
+    finally:
+        shutil.rmtree(task_dir, ignore_errors=True)
+
+
+async def _fetch_captions(url: str) -> str:
     """Download VTT subtitle and return clean plain-text transcript."""
     task_dir = DOWNLOAD_DIR / f"transcript_{uuid.uuid4().hex[:8]}"
     task_dir.mkdir(exist_ok=True)

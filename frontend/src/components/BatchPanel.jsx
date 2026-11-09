@@ -48,7 +48,7 @@ export function BatchPanel({ queue }) {
         </button>
 
         <p className="text-xs text-surface-400 dark:text-surface-500 text-center">
-          Links download one at a time · 450 MB limit per file
+          Links download one at a time
         </p>
       </div>
 

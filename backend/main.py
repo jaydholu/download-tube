@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from config import DOWNLOAD_DIR, MAX_FILE_SIZE_MB
+from config import DOWNLOAD_DIR
 from models import DownloadRequest, VideoInfoRequest
 from downloader import active_downloads, get_video_info, download_media, fetch_transcript
 from utils import cleanup_task_files
@@ -71,7 +71,7 @@ app.add_middleware(
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "max_size_mb": MAX_FILE_SIZE_MB}
+    return {"status": "ok"}
 
 
 @app.post("/api/info")
@@ -146,8 +146,7 @@ async def get_file(task_id: str):
 
 @app.post("/api/transcript")
 async def get_transcript(req: VideoInfoRequest):
-    transcript = await fetch_transcript(req.url)
-    return {"transcript": transcript}
+    return await fetch_transcript(req.url)
 
 
 # ---------------------------------------------------------------------------

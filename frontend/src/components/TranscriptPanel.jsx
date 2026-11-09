@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FileText, X, Copy, Check } from 'lucide-react';
 
-export function TranscriptPanel({ transcript, onClose }) {
+export function TranscriptPanel({ transcript, source, onClose }) {
   const [copied, setCopied] = useState(false);
 
   if (!transcript)
@@ -36,6 +36,11 @@ export function TranscriptPanel({ transcript, onClose }) {
           </button>
         </div>
       </div>
+      {source === 'whisper' && (
+        <p className="text-xs text-surface-400 dark:text-surface-500 mb-2">
+          Transcribed from the audio by AI — may contain mistakes.
+        </p>
+      )}
       <div className="max-h-64 overflow-y-auto text-sm text-surface-600 dark:text-surface-400 leading-relaxed pr-2">
         {transcript}
       </div>

@@ -22,6 +22,7 @@ export function StatusMessage({ status, taskData }) {
     },
     failed: { icon: AlertCircle, color: 'text-red-500', spin: false, msg: taskData?.error || 'Download failed' },
     transcript_loading: { icon: Loader2, color: 'text-blue-500', spin: true, msg: 'Fetching transcript...' },
+    transcribing: { icon: Loader2, color: 'text-blue-500', spin: true, msg: 'Transcribing audio... this can take 10–20 seconds' },
   };
 
   const cfg = configs[status];

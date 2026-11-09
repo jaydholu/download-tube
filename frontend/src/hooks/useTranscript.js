@@ -3,6 +3,7 @@ import { fetchTranscript as apiFetchTranscript } from '../api/client';
 
 export function useTranscript() {
   const [transcript, setTranscript] = useState(null);
+  const [source, setSource] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -13,6 +14,7 @@ export function useTranscript() {
     try {
       const data = await apiFetchTranscript(url);
       setTranscript(data.transcript);
+      setSource(data.source);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -22,8 +24,9 @@ export function useTranscript() {
 
   const clear = useCallback(() => {
     setTranscript(null);
+    setSource(null);
     setError(null);
   }, []);
 
-  return { transcript, loading, error, fetchFor, clear };
+  return { transcript, source, loading, error, fetchFor, clear };
 }

@@ -1,9 +1,13 @@
+import os
 from pathlib import Path
 import tempfile
 
+from dotenv import load_dotenv
 
-MAX_FILE_SIZE_MB = 450
-MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+
+# Reads backend/.env (gitignored) so secrets like the Groq key don't have to
+# be exported again in every new terminal.
+load_dotenv(Path(__file__).parent / ".env")
 
 DOWNLOAD_DIR = Path(tempfile.gettempdir()) / "downloadtube"
 DOWNLOAD_DIR.mkdir(exist_ok=True)
@@ -19,6 +23,16 @@ LOCAL_INSTAGRAM_COOKIES_PATH = Path(__file__).parent / "cookies_instagram.txt"
 # requests even with a PO token provider running — see downloader.py.
 YOUTUBE_COOKIES_PATH = Path("/etc/secrets/cookies_youtube.txt")
 LOCAL_YOUTUBE_COOKIES_PATH = Path(__file__).parent / "cookies_youtube.txt"
+
+# Instagram reels have no captions to fetch, so their transcripts come from
+# speech-to-text on the audio, using Groq's hosted Whisper.
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
+GROQ_MODEL = os.getenv("GROQ_WHISPER_MODEL", "whisper-large-v3").strip()
+# Optional ISO-639-1 code (e.g. "hi", "en"). Empty = let Whisper auto-detect,
+# which can misjudge short Hindi/Hinglish clips — pin it if that happens.
+GROQ_LANGUAGE = os.getenv("GROQ_LANGUAGE", "").strip()
+GROQ_TRANSCRIPTION_URL = "https://api.groq.com/openai/v1/audio/transcriptions"
+GROQ_MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # free-tier upload cap
 
 VIDEO_QUALITIES = ["1080", "720", "480", "360", "240", "144"]
 AUDIO_QUALITIES = ["320", "256", "192", "128", "64", "32"]

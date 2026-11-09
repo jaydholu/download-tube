@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from 'react';
-import { HardDrive } from 'lucide-react';
 
 import { useTheme } from './hooks/useTheme';
 import { useBatchQueue } from './hooks/useBatchQueue';
@@ -94,13 +93,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="relative z-10 text-center py-6 text-xs text-surface-500 dark:text-surface-500 font-body">
-        <p>
-          DownloadTube · For personal use only ·{' '}
-          <span className="inline-flex items-center gap-1">
-            <HardDrive size={10} />
-            450 MB limit
-          </span>
-        </p>
+        <p>DownloadTube · For personal use only</p>
       </footer>
     </div>
   )
