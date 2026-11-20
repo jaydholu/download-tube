@@ -85,15 +85,15 @@ Instagram needs a logged-in session to be reliable. YouTube usually works anonym
 1. **Use a secondary/throwaway account, not your main one.**
 2. Log into that account in a browser, then export its session with yt-dlp:
    ```bash
-   yt-dlp --cookies-from-browser firefox --cookies cookies_instagram.txt https://www.instagram.com/
-   yt-dlp --cookies-from-browser firefox --cookies cookies_youtube.txt https://www.youtube.com/watch?v=dQw4w9WgXcQ
+   yt-dlp --cookies-from-browser firefox --cookies cookies/instagram.txt https://www.instagram.com/
+   yt-dlp --cookies-from-browser firefox --cookies cookies/youtube.txt https://www.youtube.com/
    ```
    Use a real video URL for the YouTube export. Swap `firefox` for your browser — Chrome-based browsers can fail (`Could not copy Chrome cookie database`) since Chrome 127; Firefox doesn't have this issue, and a cookies-export extension (e.g. "Get cookies.txt LOCALLY") is a reliable alternative. The `Unsupported URL` line for the bare Instagram homepage is harmless.
 3. **Filter each file down to that platform's cookies** — the raw export contains your whole browser's cookie jar:
    ```powershell
-   Get-Content cookies_instagram.txt | Where-Object { $_ -match '^#' -or $_ -match 'instagram\.com' } | Set-Content cookies_instagram.txt
+   Get-Content cookies/instagram.txt | Where-Object { $_ -match '^#' -or $_ -match 'instagram\.com' } | Set-Content instagram.txt
    ```
-4. Place them at `backend/cookies_instagram.txt` / `backend/cookies_youtube.txt`. Both are gitignored — never commit them, they grant full account access. Cookies expire; re-export if Instagram downloads or transcripts start failing.
+4. Place them at `backend/cookies/instagram.txt` / `backend/cookies/youtube.txt`. Both are gitignored — never commit them, they grant full account access. Cookies expire; re-export if Instagram downloads or transcripts start failing.
 
 > **Note on hosting:** this app is meant to run locally. YouTube blocks datacenter IPs (e.g. Render) with its bot check, even with cookies and PO tokens, so cloud deployment isn't supported. `render.yaml` and `build.sh` are leftovers from that attempt and are not used locally.
 
@@ -102,6 +102,9 @@ Instagram needs a logged-in session to be reliable. YouTube usually works anonym
 ```
 download-tube/
 ├── backend/
+│   ├── cookies/
+│   │   ├── instagram.txt               # you create this — gitignored, see Cookies above
+│   │   └── youtube.txt                 # you create this — gitignored, see Cookies above
 │   ├── main.py                         # FastAPI app, routes, lifespan startup/cleanup
 │   ├── downloader.py                   # yt-dlp orchestration (info / download / transcript)
 │   ├── transcriber.py                  # Groq Whisper client for Instagram transcripts
@@ -110,8 +113,6 @@ download-tube/
 │   ├── utils.py                        # Platform detection, cookie flags, filename sanitization
 │   ├── requirements.txt                # Python dependencies
 │   ├── .env.example                    # copy to .env and add GROQ_API_KEY (.env is gitignored)
-│   ├── cookies_instagram.txt           # you create this — gitignored, see Cookies above
-│   ├── cookies_youtube.txt             # you create this — gitignored, see Cookies above
 │   └── static/                         # built frontend output (only if you serve it from the backend), gitignored
 ├── frontend/
 │   ├── src/

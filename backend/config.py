@@ -15,14 +15,14 @@ DOWNLOAD_DIR.mkdir(exist_ok=True)
 # Both platforms require an authenticated session for reliable cloud access.
 # On Render these are supplied as Secret Files (uploaded via the dashboard).
 # Locally, drop the matching file next to this one for the same effect.
-INSTAGRAM_COOKIES_PATH = Path("/etc/secrets/cookies_instagram.txt")
-LOCAL_INSTAGRAM_COOKIES_PATH = Path(__file__).parent / "cookies_instagram.txt"
+INSTAGRAM_COOKIES_PATH = Path("/etc/secrets/cookies/instagram.txt")
+LOCAL_INSTAGRAM_COOKIES_PATH = Path(__file__).parent / "cookies/instagram.txt"
 
 # YouTube doesn't strictly need cookies from a residential IP, but from a
 # datacenter IP (Render) its bot detection routinely blocks anonymous
 # requests even with a PO token provider running — see downloader.py.
-YOUTUBE_COOKIES_PATH = Path("/etc/secrets/cookies_youtube.txt")
-LOCAL_YOUTUBE_COOKIES_PATH = Path(__file__).parent / "cookies_youtube.txt"
+YOUTUBE_COOKIES_PATH = Path("/etc/secrets/cookies/youtube.txt")
+LOCAL_YOUTUBE_COOKIES_PATH = Path(__file__).parent / "cookies/youtube.txt"
 
 # Instagram reels have no captions to fetch, so their transcripts come from
 # speech-to-text on the audio, using Groq's hosted Whisper.
