@@ -8,8 +8,7 @@ venv/
 .env
 
 # Cookies
-backend/cookies_instagram.txt
-backend/cookies_youtube.txt
+backend/cookies/*
 
 # Node
 node_modules/
